@@ -17,7 +17,6 @@ import static com.nesposi3.Utils.StaticUtils.*;
  *          8       8           32      40
  *    | address | parent |   children | keys |
  */
-//TODO int[] keys has to be added. Use hash of url for key. Going
 public class Node {
     public long address;
     public long parent;
@@ -114,7 +113,6 @@ public class Node {
             return (address && parent && children && keys);
         }
     }
-
     @Override
     public String toString() {
         StringBuilder s = new StringBuilder();
@@ -126,5 +124,19 @@ public class Node {
             s.append("\nKey " + i +": " + this.keys[i] );
         }
         return s.toString();
+    }
+
+    @Override
+    public int hashCode() {
+        int addCode = Long.hashCode(address);
+        int parentCode = Long.hashCode(parent);
+        int code = addCode ^ parentCode;
+        for (int i = 0; i <NUM_CHILDREN ; i++) {
+            code ^= Long.hashCode(children[i]);
+        }
+        for (int i = 0; i <K ; i++) {
+            code ^= Long.hashCode(keys[i]);
+        }
+        return code;
     }
 }
