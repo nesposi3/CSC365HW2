@@ -9,16 +9,24 @@ import java.io.RandomAccessFile;
 
 import static com.nesposi3.Utils.StaticUtils.*;
 
+/**
+ * A persistent, file-based BTree with IOCache
+ */
 public class BTree {
     private Node root;
     private BoundedLinkedHashMap<Long, Byte[]> cache;
 
+    /**
+     * This method checks if the requested node is in cache, or if not, on disk.
+     * @param address The address to look at
+     * @return The node at said address, or null if it does not exist
+     * @throws IOException IOException represents a fatal error during execution, should lead to program shutdown
+     */
     public Node readNodeFromFile(long address) throws IOException {
         if (cache.containsValue(address)) {
             // This node is cached
             return new Node(cache.get(address));
         }
-
         File f = new File(BTREE_FILE_NAME);
         if (f.exists()) {
             RandomAccessFile btreeFile = new RandomAccessFile(f, "rw");
@@ -40,6 +48,11 @@ public class BTree {
         }
     }
 
+    /**
+     * Writes a node to disk and cache
+     * @param n The node to write to disk/cache
+     * @throws IOException Represents fatal error in execution, should cause shutdown
+     */
     public void writeNodeToFile(Node n) throws IOException {
         long address = n.address;
         byte[] nodeBytes = n.toBytes();

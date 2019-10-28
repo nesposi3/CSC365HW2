@@ -47,6 +47,11 @@ public class Node {
         this.address = 0;
         this.parent = NULL;
     }
+
+    /**
+     * Create a Node object from a Byte object array
+     * @param objectArr Byte object array representing a Node
+     */
     public Node(Byte[] objectArr){
         byte[] arr = StaticUtils.toPrimitiveBytes(objectArr);
         this.children = new long[NUM_CHILDREN];
@@ -62,6 +67,10 @@ public class Node {
         }
     }
 
+    /**
+     * Create a Node object from a byte array
+     * @param arr byte primitive array representing a node
+     */
     public Node(byte[] arr){
         this.children = new long[NUM_CHILDREN];
         this.keys = new long[K];
@@ -76,6 +85,11 @@ public class Node {
         }
 
     }
+
+    /**
+     * Serializes this Node object into a byte representation
+     * @return a byte[] representing the node
+     */
     public byte[] toBytes(){
         int nodeSize = (6 * ADDRESS_SIZE)+ (K*ADDRESS_SIZE) + (NUM_CHILDREN*ADDRESS_SIZE);
         ByteBuffer buffer = ByteBuffer.allocate(nodeSize);
