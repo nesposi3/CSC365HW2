@@ -3,8 +3,8 @@ package com.nesposi3.Utils;
 public class StaticUtils {
     public static final String BTREE_FILE_NAME ="storage/b_tree.txt";
     public static final long NULL = -1;
-    public static final int K = 5;
-    public static final int NUM_CHILDREN = K-1;
+    public static final int K = 4;
+    public static final int NUM_CHILDREN = K+1;
     public static final int ADDRESS_SIZE = 8;
     public static final int BLOCK_SIZE = 4096;
     public static final int CACHE_MAX_SIZE = 100;
