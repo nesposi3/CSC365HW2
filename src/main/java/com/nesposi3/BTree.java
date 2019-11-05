@@ -109,22 +109,106 @@ public class BTree {
         }
     }
 
-    public void splitChild(Node x,int index) {
+    public void splitChildOld(Node x, int index) {
         long zAddr = getNewAddress();
         Node y = readNodeFromFile(x.children[index]);
         int splitIndex = K >>> 1;
         long yMedianKey = y.keys[splitIndex];
-        Node z =  y.getRightSplitNode(x.address,zAddr,splitIndex);
-        y = y.getLeftSplitNode(y.parent,y.address,splitIndex);
+        Node z = y.getRightSplitNode(x.address, zAddr, splitIndex);
+        y = y.getLeftSplitNode(y.parent, y.address, splitIndex);
         x.addKey(yMedianKey);
         x.addChild(z.address);
         System.out.println(y);
         System.out.println(z);
-        try{
+        try {
             writeNodeToFile(y);
             writeNodeToFile(x);
             writeNodeToFile(z);
-        }catch (IOException ioe){
+        } catch (IOException ioe) {
+            ioe.printStackTrace();
+        }
+    }
+
+    public void splitChild(Node x, int index) {
+        Node z = new Node();
+        z.address = getNewAddress();
+        Node y = readNodeFromFile(x.children[index]);
+        y.parent = x.address;
+        z.parent = x.address;
+        for (int i = 0; i < T - 1; i++) {
+            z.keys[i] = y.keys[i + T];
+        }
+        if (!y.leafStatus()) {
+            for (int i = 0; i < T; i++) {
+                z.children[i] = y.children[i + T];
+            }
+        }
+        for (int i = x.numKeys(); i > index; i--) {
+            x.children[i + 1] = x.children[i];
+        }
+        x.children[index + 1] = z.address;
+        for (int i = x.numKeys() - 1; i >= index; i--) {
+            x.keys[i + 1] = x.keys[i];
+        }
+        x.keys[index] = y.keys[T - 1];
+        y.setNumKeys(T-1);
+        try {
+            writeNodeToFile(z);
+            writeNodeToFile(x);
+            writeNodeToFile(y);
+        } catch (IOException ioe) {
+            ioe.printStackTrace();
+        }
+    }
+
+    public void insert(int k) {
+        try {
+            Node r = this.root;
+            if (r.isFull()) {
+                r.address = getNewAddress();
+                r.parent = 0;
+                writeNodeToFile(r);
+                Node s = new Node();
+                s.children[0] = r.address;
+                s.address = 0;
+                writeNodeToFile(s);
+                splitChild(s, 0);
+                s = readNodeFromFile(0);
+                insertNonFull(s, k);
+            } else {
+                insertNonFull(r, k);
+            }
+        } catch (IOException ioe) {
+            ioe.printStackTrace();
+        }
+    }
+
+    private void insertNonFull(Node x, int k) {
+        try {
+            int i = x.numKeys() - 1;
+            if (x.leafStatus()) {
+                while (i >= 0 && k < x.keys[i]) {
+                    x.keys[i + 1] = x.keys[i];
+                    i--;
+                }
+                x.keys[i + 1] = k;
+                writeNodeToFile(x);
+            } else {
+                while (i >= 0 && k < x.keys[i]) {
+                    i--;
+                }
+                i++;
+                Node node = readNodeFromFile(x.children[i]);
+                if (node.isFull()) {
+                    splitChild(x, i);
+                    x = readNodeFromFile(x.address);
+                    if (k > x.keys[i]) i++;
+                    node = readNodeFromFile(node.address);
+                }
+                insertNonFull(node, k);
+
+            }
+        } catch (IOException ioe) {
             ioe.printStackTrace();
         }
     }
@@ -144,26 +228,25 @@ public class BTree {
             return false;
         } else {
             Node next = readNodeFromFile(node.children[i]);
-            if(next==null) return false;
-            return bTreeSearch(next,key);
+            if (next == null) return false;
+            return bTreeSearch(next, key);
         }
     }
-    public void insert(int k){
-        Node n = this.root;
-        if(n.isFull()){
-            Node s = new Node();
-            this.root = s;
-            n.address = getNewAddress();
-            s.addChild(n.address);
-            System.out.println(n.address);
-            splitChild(s,0);
-            insertNonFull(s,k);
-
-        }else{
-            insertNonFull(n,k);
-        }
+    public void printAll(){
+        printAllNodes(readNodeFromFile(0));
     }
-    private void insertNonFull(Node x, int k){
+    private void printAllNodes(Node n) {
+        if (n.leafStatus()) {
+            System.out.println(n.toString());
+        } else {
+            System.out.println(n.toString());
+            for (int i = 0; i < NUM_CHILDREN; i++) {
+                if (n.children[i] != NULL) {
+                    Node x = readNodeFromFile(n.children[i]);
+                    printAllNodes(x);
+                }
+            }
+        }
 
     }
 }

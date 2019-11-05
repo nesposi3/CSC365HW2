@@ -4,6 +4,7 @@ import com.nesposi3.Utils.StaticUtils;
 
 import java.lang.reflect.Array;
 import java.nio.ByteBuffer;
+import java.util.ArrayDeque;
 import java.util.Arrays;
 
 import static com.nesposi3.Utils.StaticUtils.*;
@@ -44,20 +45,9 @@ public class Node {
      *
      */
     public Node(){
-        this.children = new long[]{NULL,NULL,NULL,NULL,NULL};
-        this.keys = new long[]{NULL,NULL,NULL,NULL};
+        this.children = Arrays.copyOf(getNullLongArray(NUM_CHILDREN),NUM_CHILDREN);
+        this.keys = Arrays.copyOf(getNullLongArray(K),K);
         this.address = 0;
-        this.parent = NULL;
-    }
-
-    /**
-     * Constructor to initialize empty node at specified position
-     * @param pos
-     */
-    public Node(long pos){
-        this.children = new long[]{NULL,NULL,NULL,NULL};
-        this.keys = new long[]{NULL,NULL,NULL,NULL,NULL};
-        this.address = pos;
         this.parent = NULL;
     }
 
@@ -104,8 +94,7 @@ public class Node {
      * @return a byte[] representing the node
      */
     public byte[] toBytes(){
-        int nodeSize = (6 * ADDRESS_SIZE)+ (K*ADDRESS_SIZE) + (NUM_CHILDREN*ADDRESS_SIZE);
-        ByteBuffer buffer = ByteBuffer.allocate(nodeSize);
+        ByteBuffer buffer = ByteBuffer.allocate(BLOCK_SIZE);
         buffer.putLong(this.address);
         buffer.putLong(this.parent);
         for (int i = 0; i <NUM_CHILDREN ; i++) {
@@ -226,6 +215,20 @@ public class Node {
         return out;
 
 
+    }
+    public void setNumKeys(int n){
+        int x =0;
+        for (int i = 0; i <K ; i++) {
+            if(x==n){
+                for (int j = i; j <K ; j++) {
+                    keys[j] = NULL;
+                }
+                break;
+            }
+            if(keys[i]!=NULL){
+                x++;
+            }
+        }
     }
     private long[] getNullLongArray(int size){
         long[] out = new long[size];

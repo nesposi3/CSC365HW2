@@ -1,15 +1,23 @@
 package com.nesposi3;
 
 import java.io.*;
+import java.util.Scanner;
 
 public class Main {
     public static void  main(String[] args){
         try{
             BTree b = new BTree();
-            Node newRoot = new Node(0,-1,new long[]{-1,-1,-1,-1,-1},new long[]{0,100,300,500});
-            b.writeNodeToFile(newRoot);
-            b.insert(200);
-            System.out.println(b.readNodeFromFile(0));
+            Scanner sc = new Scanner(System.in);
+            while (true){
+                String s = sc.nextLine();
+                if(s.equals("exit")){
+                    break;
+                }else{
+                    int a = Integer.parseInt(s);
+                    b.insert(a);
+                    b.printAll();
+                }
+            }
         }catch (IOException ioe){
             ioe.printStackTrace();
         }
