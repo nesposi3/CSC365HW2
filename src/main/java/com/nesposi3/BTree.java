@@ -109,26 +109,6 @@ public class BTree {
         }
     }
 
-    public void splitChildOld(Node x, int index) {
-        long zAddr = getNewAddress();
-        Node y = readNodeFromFile(x.children[index]);
-        int splitIndex = K >>> 1;
-        long yMedianKey = y.keys[splitIndex];
-        Node z = y.getRightSplitNode(x.address, zAddr, splitIndex);
-        y = y.getLeftSplitNode(y.parent, y.address, splitIndex);
-        x.addKey(yMedianKey);
-        x.addChild(z.address);
-        System.out.println(y);
-        System.out.println(z);
-        try {
-            writeNodeToFile(y);
-            writeNodeToFile(x);
-            writeNodeToFile(z);
-        } catch (IOException ioe) {
-            ioe.printStackTrace();
-        }
-    }
-
     public void splitChild(Node x, int index) {
         Node z = new Node();
         z.address = getNewAddress();
@@ -161,9 +141,9 @@ public class BTree {
         }
     }
 
-    public void insert(int k) {
+    public void insert(long k) {
         try {
-            Node r = this.root;
+            Node r = readNodeFromFile(0);
             if (r.isFull()) {
                 r.address = getNewAddress();
                 r.parent = 0;
@@ -183,9 +163,10 @@ public class BTree {
         }
     }
 
-    private void insertNonFull(Node x, int k) {
+    private void insertNonFull(Node x, long k) {
         try {
             int i = x.numKeys() - 1;
+            //System.out.println("{insertNonFull: " + x.toString() + "}");
             if (x.leafStatus()) {
                 while (i >= 0 && k < x.keys[i]) {
                     x.keys[i + 1] = x.keys[i];
@@ -203,7 +184,7 @@ public class BTree {
                     splitChild(x, i);
                     x = readNodeFromFile(x.address);
                     if (k > x.keys[i]) i++;
-                    node = readNodeFromFile(node.address);
+                    node = readNodeFromFile(x.children[i]);
                 }
                 insertNonFull(node, k);
 
