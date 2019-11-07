@@ -34,7 +34,7 @@
                     <descriptorRefs>jar-with-dependencies</descriptorRefs>
                     <archive>
                         <manifest>
-                            <mainClass>com.nesposi3.Main</mainClass>
+                            <mainClass>com.nesposi3.Loader</mainClass>
                         </manifest>
                     </archive>
                 </configuration>
@@ -48,7 +48,39 @@
                     </execution>
                 </executions>
             </plugin>
+            <plugin>
+                <groupId>org.openjfx</groupId>
+                <artifactId>javafx-maven-plugin</artifactId>
+                <version>0.0.3</version>
+                <configuration>
+                    <mainClass>com.nesposi3.GuiMain</mainClass>
+                </configuration>
+            </plugin>
         </plugins>
     </build>
+    <dependencies>
+
+        <!-- https://mvnrepository.com/artifact/org.jsoup/jsoup -->
+        <dependency>
+            <groupId>org.jsoup</groupId>
+            <artifactId>jsoup</artifactId>
+            <version>1.12.1</version>
+        </dependency>
+
+        <!-- https://mvnrepository.com/artifact/org.openjfx/javafx-controls -->
+        <dependency>
+            <groupId>org.openjfx</groupId>
+            <artifactId>javafx-controls</artifactId>
+            <version>13</version>
+        </dependency>
+
+        <dependency>
+            <groupId>commons-codec</groupId>
+            <artifactId>commons-codec</artifactId>
+            <version>1.13</version>
+        </dependency>
+
+
+    </dependencies>
 
 </project>

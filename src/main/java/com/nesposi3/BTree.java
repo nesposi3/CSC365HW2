@@ -1,14 +1,14 @@
 package com.nesposi3;
 
 import com.nesposi3.Utils.BoundedLinkedHashMap;
-import com.nesposi3.Utils.StaticUtils;
+import com.nesposi3.Utils.BTreeUtils;
 
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 
-import static com.nesposi3.Utils.StaticUtils.*;
+import static com.nesposi3.Utils.BTreeUtils.*;
 
 /**
  * A persistent, file-based BTree with IOCache
@@ -16,7 +16,7 @@ import static com.nesposi3.Utils.StaticUtils.*;
 public class BTree {
     private Node root;
     private BoundedLinkedHashMap<Long, Byte[]> cache;
-
+    private String fileName;
     /**
      * This method checks if the requested node is in cache, or if not, on disk.
      *
@@ -24,12 +24,12 @@ public class BTree {
      * @return The node at said address, or null if it does not exist
      * @throws IOException IOException represents a fatal error during execution, should lead to program shutdown
      */
-    public Node readNodeFromFile(long address) {
+    private Node readNodeFromFile(long address) {
         if (cache.containsValue(address)) {
             // This node is cached
             return new Node(cache.get(address));
         }
-        File f = new File(BTREE_FILE_NAME);
+        File f = new File(this.fileName);
         try {
             if (f.exists()) {
                 RandomAccessFile btreeFile = new RandomAccessFile(f, "rw");
@@ -37,7 +37,7 @@ public class BTree {
                 byte[] nodeBytes = new byte[BLOCK_SIZE];
                 btreeFile.read(nodeBytes);
                 Node n = new Node(nodeBytes);
-                cache.put(n.address, StaticUtils.fromPrimitiveBytes(nodeBytes));
+                cache.put(n.address, BTreeUtils.fromPrimitiveBytes(nodeBytes));
                 return n;
 
             } else {
@@ -57,25 +57,26 @@ public class BTree {
      * @param n The node to write to disk/cache
      * @throws IOException Represents fatal error in execution, should cause shutdown
      */
-    public void writeNodeToFile(Node n) throws IOException {
+    private void writeNodeToFile(Node n) throws IOException {
         long address = n.address;
         byte[] nodeBytes = n.toBytes();
         if (cache.containsKey(address)) {
             // Need to update cache
             cache.remove(address);
-            cache.put(address, StaticUtils.fromPrimitiveBytes(nodeBytes));
+            cache.put(address, BTreeUtils.fromPrimitiveBytes(nodeBytes));
         }
-        File f = new File(BTREE_FILE_NAME);
+        File f = new File(this.fileName);
         RandomAccessFile btreeFile = new RandomAccessFile(f, "rw");
         btreeFile.seek(address);
         btreeFile.write(nodeBytes);
     }
 
-    public BTree() throws IOException {
+    public BTree(String fileName) throws IOException {
+        this.fileName = fileName;
         this.cache = new BoundedLinkedHashMap<>(CACHE_MAX_SIZE);
-        File f = new File(BTREE_FILE_NAME);
+        File f = new File(this.fileName);
         if (f.exists()) {
-            RandomAccessFile btreeFile = new RandomAccessFile(BTREE_FILE_NAME, "rw");
+            RandomAccessFile btreeFile = new RandomAccessFile(this.fileName, "rw");
             //File exists, read root node and set as root
             btreeFile.seek(0);
             byte[] nodeBytes = new byte[BLOCK_SIZE];
@@ -97,9 +98,9 @@ public class BTree {
 
     }
 
-    public long getNewAddress() {
+    private long getNewAddress() {
         try {
-            File f = new File(BTREE_FILE_NAME);
+            File f = new File(this.fileName);
             RandomAccessFile rFile = new RandomAccessFile(f, "r");
             return rFile.length();
         } catch (FileNotFoundException fnf) {
@@ -109,7 +110,7 @@ public class BTree {
         }
     }
 
-    public void splitChild(Node x, int index) {
+    private void splitChild(Node x, int index) {
         Node z = new Node();
         z.address = getNewAddress();
         Node y = readNodeFromFile(x.children[index]);
@@ -117,6 +118,7 @@ public class BTree {
         z.parent = x.address;
         for (int i = 0; i < T - 1; i++) {
             z.keys[i] = y.keys[i + T];
+            z.frequencies[i] = y.frequencies[i+T];
         }
         if (!y.leafStatus()) {
             for (int i = 0; i < T; i++) {
@@ -129,8 +131,10 @@ public class BTree {
         x.children[index + 1] = z.address;
         for (int i = x.numKeys() - 1; i >= index; i--) {
             x.keys[i + 1] = x.keys[i];
+            x.frequencies[i+1] = x.frequencies[i];
         }
         x.keys[index] = y.keys[T - 1];
+        x.frequencies[index] = y.frequencies[T-1];
         y.setNumKeys(T-1);
         try {
             writeNodeToFile(z);
@@ -141,7 +145,7 @@ public class BTree {
         }
     }
 
-    public void insert(long k) {
+    public void insert(long k,int freq) {
         try {
             Node r = readNodeFromFile(0);
             if (r.isFull()) {
@@ -154,25 +158,26 @@ public class BTree {
                 writeNodeToFile(s);
                 splitChild(s, 0);
                 s = readNodeFromFile(0);
-                insertNonFull(s, k);
+                insertNonFull(s, k,freq);
             } else {
-                insertNonFull(r, k);
+                insertNonFull(r, k,freq);
             }
         } catch (IOException ioe) {
             ioe.printStackTrace();
         }
     }
 
-    private void insertNonFull(Node x, long k) {
+    private void insertNonFull(Node x, long k, int freq) {
         try {
             int i = x.numKeys() - 1;
-            //System.out.println("{insertNonFull: " + x.toString() + "}");
             if (x.leafStatus()) {
                 while (i >= 0 && k < x.keys[i]) {
                     x.keys[i + 1] = x.keys[i];
+                    x.frequencies[i+1] = x.frequencies[i];
                     i--;
                 }
                 x.keys[i + 1] = k;
+                x.frequencies[i+1] = freq;
                 writeNodeToFile(x);
             } else {
                 while (i >= 0 && k < x.keys[i]) {
@@ -186,7 +191,7 @@ public class BTree {
                     if (k > x.keys[i]) i++;
                     node = readNodeFromFile(x.children[i]);
                 }
-                insertNonFull(node, k);
+                insertNonFull(node, k,freq);
 
             }
         } catch (IOException ioe) {

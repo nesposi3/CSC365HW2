@@ -1,6 +1,6 @@
 package com.nesposi3.Utils;
 
-public class StaticUtils {
+public class BTreeUtils {
     public static final String BTREE_FILE_NAME ="storage/b_tree.txt";
     public static final long NULL = -1;
     public static final int T = 3;
