@@ -7,6 +7,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
+import java.util.function.Consumer;
 
 import static com.nesposi3.Utils.BTreeUtils.*;
 
@@ -199,22 +200,28 @@ public class BTree {
         }
     }
 
-    public boolean search(long key) {
+    public int search(long key) {
         return bTreeSearch(this.root, key);
     }
 
-    private boolean bTreeSearch(Node node, long key) {
+    private int bTreeSearch(Node node, long key) {
         int i = 0;
-        while (i < NUM_CHILDREN && key > node.keys[i]) {
-            i++;
+        while (i < K && key > node.keys[i]) {
+            if(node.keys[i]==NULL){
+                // Need this in here as NULL==-1, which could be cnsidered
+                break;
+            }else{
+                i++;
+            }
+
         }
-        if (key == node.keys[i]) {
-            return true;
+        if (i<K && key == node.keys[i]) {
+            return node.frequencies[i];
         } else if (node.leafStatus()) {
-            return false;
+            return 0;
         } else {
             Node next = readNodeFromFile(node.children[i]);
-            if (next == null) return false;
+            if (next == null) return 0;
             return bTreeSearch(next, key);
         }
     }
@@ -234,5 +241,81 @@ public class BTree {
             }
         }
 
+    }
+    public void forEach(Consumer<Node> consumer){
+        Node node = readNodeFromFile(0);
+        if(node != null){
+            forEach(consumer,node);
+        }
+    }
+    private void forEach(Consumer<Node> consumer, Node node){
+        if(node.leafStatus()){
+            consumer.accept(node);
+        }else {
+            consumer.accept(node);
+            for (int i = 0; i < NUM_CHILDREN; i++) {
+                if (node.children[i] != NULL) {
+                    Node x = readNodeFromFile(node.children[i]);
+                    forEach(consumer,x);
+                }
+            }
+        }
+    }
+    public double computeEuclideanDistance(BTree other){
+        Node n = readNodeFromFile(0);
+        return Math.sqrt(computeEuclideanDistance(n,other,0));
+    }
+    private double computeEuclideanDistance(Node node,BTree other,double total){
+        if(node.leafStatus()){
+            for (int i = 0; i <node.keys.length ; i++) {
+                long wordA = node.keys[i];
+                int freqA = node.frequencies[i];
+                int freqB = other.search(wordA);
+                double x = (freqA - freqB)*(freqA-freqB);
+                total = total + x;
+            }
+            return total;
+        }else {
+            for (int i = 0; i <node.keys.length ; i++) {
+                long wordA = node.keys[i];
+                int freqA = node.frequencies[i];
+                int freqB = other.search(wordA);
+                double x = (freqA - freqB)*(freqA-freqB);
+                total = total + x;
+            }
+            for (int i = 0; i < NUM_CHILDREN; i++) {
+                if (node.children[i] != NULL) {
+                    Node x = readNodeFromFile(node.children[i]);
+                    return computeEuclideanDistance(x,other,total);
+                }
+            }
+            return total;
+        }
+    }
+    public int totalWordCount(){
+        Node node = readNodeFromFile(0);
+        return this.totalWordCount(node,0);
+    }
+    private int totalWordCount(Node n,int total) {
+        if (n.leafStatus()) {
+            for (int i = 0; i <K ; i++) {
+                if(n.keys[i]!=NULL){
+                    total += n.frequencies[i];
+                }
+            }
+            return total;
+        } else {
+            for (int i = 0; i <K ; i++) {
+                if(n.keys[i]!=NULL){
+                    total += n.frequencies[i];
+                }
+            }            for (int i = 0; i < NUM_CHILDREN; i++) {
+                if (n.children[i] != NULL) {
+                    Node x = readNodeFromFile(n.children[i]);
+                    return totalWordCount(x,total);
+                }
+            }
+            return total;
+        }
     }
 }

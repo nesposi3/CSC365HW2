@@ -14,6 +14,7 @@ import java.io.IOException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.Scanner;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -43,7 +44,7 @@ public class CacheUtils {
         File links = new File("links.txt");
         Scanner file = new Scanner(links);
         //This pattern excludes all files, special wikipedia pages, and disambiguation pages
-        Pattern urlPattern = Pattern.compile("\\/wiki\\/((?!((Wikipedia:)|(File:))).)*(?<!(_\\(disambiguation\\)))");
+        Pattern urlPattern = Pattern.compile("\\/wiki\\/((?!((Wikipedia:)|(File:)|(Help:))).)*(?<!(_\\(disambiguation\\)))");
         while (file.hasNextLine()) {
             String line = file.nextLine();
             Document doc = (getWebsiteDocument(line));
@@ -59,7 +60,6 @@ public class CacheUtils {
                 if (m.matches()) {
                     numLinks++;
                     String flink = BASE_URI + (e.attr("href"));
-                    System.out.println(flink);
                     Document linkedDoc = getWebsiteDocument(flink);
                     writeDocToBtree(generateFileName(flink),linkedDoc);
                 }
@@ -114,7 +114,26 @@ public class CacheUtils {
         }
     }
 
-    private static void writeDocToBtree(String name,Document document) throws IOException {
-        BTree bTree = new BTree(name);
+    private static BTree writeDocToBtree(String name,Document document) throws IOException {
+
+        BTree bTree = new BTree(DIRECTORY_NAME+name);
+        //Maps word hash with frequencies
+        HashMap<Long,Integer> map = new HashMap<>();
+        String content = document.text();
+        String delimiters ="[ .!?@\\[\\]/()\\-—,\"\']";
+        String[] words = content.split(delimiters);
+        for (int i = 0; i <words.length ; i++) {
+            // Use the 64 bit hashing function
+            Long hashedWord = ClusteringUtils.stringHash64(words[i]);
+            //Check if word exists, if yes, increment value
+            if(map.containsKey(hashedWord)){
+                map.put(hashedWord,map.get(hashedWord)+1);
+            }else{
+                map.put(hashedWord,1);
+            }
+        }
+        // Add vals to bTree
+        map.forEach(bTree::insert);
+        return bTree;
     }
 }
