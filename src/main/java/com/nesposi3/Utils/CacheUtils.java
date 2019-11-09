@@ -22,7 +22,7 @@ import java.util.regex.Pattern;
 public class CacheUtils {
     public static final String DIRECTORY_NAME = "storage/btrees/";
     public final static String BASE_URI = "https://en.wikipedia.org";
-
+    public static final String URL_BEGINNING = "httpsenwikipediaorgwiki";
     /**
      * Removes special characters from the input string
      *
@@ -114,7 +114,7 @@ public class CacheUtils {
         }
     }
 
-    private static BTree writeDocToBtree(String name,Document document) throws IOException {
+    public static BTree writeDocToBtree(String name,Document document) throws IOException {
 
         BTree bTree = new BTree(DIRECTORY_NAME+name);
         //Maps word hash with frequencies
@@ -136,4 +136,8 @@ public class CacheUtils {
         map.forEach(bTree::insert);
         return bTree;
     }
+    public static String titleFromFileName(String name){
+        return  name.split(URL_BEGINNING)[1];
+    }
 }
+

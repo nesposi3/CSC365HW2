@@ -1,6 +1,7 @@
 package com.nesposi3;
 
 import com.nesposi3.Utils.BTreeUtils;
+import com.nesposi3.Utils.CacheUtils;
 
 import javax.imageio.IIOException;
 import java.io.File;
@@ -120,9 +121,9 @@ public class Cluster {
     @Override
     public String toString() {
         StringBuilder s = new StringBuilder("Cluster: "  + clusterId + "\n" );
-        s.append("Medioid: " + medioid +"\n");
+        s.append("Medioid: " + CacheUtils.titleFromFileName(medioid) +"\n");
         for (int i = 0; i < members.length; i++) {
-            s.append("Member " + i + " " + members[i] + "\n");
+            s.append("Member " + i + " " + CacheUtils.titleFromFileName(members[i]) + "\n");
         }
         return s.toString();
     }

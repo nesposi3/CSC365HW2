@@ -6,6 +6,7 @@ import com.nesposi3.Utils.ClusteringUtils;
 
 import java.io.IOException;
 import java.text.ParseException;
+import java.util.Scanner;
 
 public class Loader {
 
@@ -15,7 +16,7 @@ public class Loader {
         try {
             //CacheUtils.initialize();
             ClusteringUtils.kMedioids();
-        } catch (IOException e) {
+        } catch (Exception e) {
             e.printStackTrace();
         }
     }
